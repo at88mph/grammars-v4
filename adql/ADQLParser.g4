@@ -94,7 +94,13 @@ predicate
     | inPredicate
     | likePredicate
     | existsPredicate
+    | predicateGeometryFunction
     | nullPrediate
+    ;
+
+predicateGeometryFunction
+    : intersectsFunction
+    | containsFunction
     ;
 
 comparisonPredicate
@@ -107,6 +113,18 @@ betweenPredicate
 
 inPredicate
     : valueExpression NOT? IN (subquery | LPAREN valueExpression (COMMA valueExpression)* RPAREN)
+    ;
+
+intersectsFunction
+    : INTERSECTS LPAREN
+        geometryValueExpression COMMA geometryValueExpression
+      RPAREN
+    ;
+
+containsFunction
+    : CONTAINS LPAREN
+        geometryValueExpression COMMA geometryValueExpression
+      RPAREN
     ;
 
 likePredicate
@@ -151,8 +169,10 @@ factor
 
 numericPrimary
     : NUMERIC_LITERAL
+    | aggregateFunction
     | coord1Function
     | coord2Function
+    | coordsysFunction
     | functionCall
     | columnReference
     ;
@@ -164,6 +184,15 @@ numericPrimary
 
 functionCall
     : identifier LPAREN (valueExpression (COMMA valueExpression)*)? RPAREN
+    ;
+
+aggregateFunction
+    : COUNT LPAREN STAR RPAREN
+    | COUNT LPAREN setQuantifier? valueExpression RPAREN
+    | AVG   LPAREN setQuantifier? numericExpression RPAREN
+    | SUM   LPAREN setQuantifier? numericExpression RPAREN
+    | MIN   LPAREN setQuantifier? valueExpression RPAREN
+    | MAX   LPAREN setQuantifier? valueExpression RPAREN
     ;
 
 intervalFunction
@@ -202,10 +231,8 @@ coord2Function
     : COORD2 LPAREN geometryValueExpression RPAREN
     ;
 
-intersectsFunction
-    : INTERSECTS LPAREN
-        geometryValueExpression COMMA geometryValueExpression
-      RPAREN
+coordsysFunction
+    : COORDSYS LPAREN geometryValueExpression RPAREN
     ;
 
 polygonFunction
@@ -223,10 +250,10 @@ geometryFunction
     : centroidFunction
     | pointFunction
     | circleFunction
+    | coordsysFunction
     | boxFunction
     | polygonFunction
     | regionFunction
-    | intersectsFunction
     | intervalFunction
     ;
 
