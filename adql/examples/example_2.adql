@@ -1,0 +1,1 @@
+select TAP_SCHEMA.tables.table_name from TAP_SCHEMA.tables

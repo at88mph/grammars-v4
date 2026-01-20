@@ -1,0 +1,1 @@
+select top 1 "size" from tap_schema.columns where "size" is not null

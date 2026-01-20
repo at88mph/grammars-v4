@@ -1,0 +1,1 @@
+select TOP 1 obsID from caom2.Observation

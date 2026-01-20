@@ -91,6 +91,15 @@
   ]
  },
  {
+    "name": "adql",
+    "lexer": "https://raw.githubusercontent.com/antlr/grammars-v4/master/adql/ADQLLexer.g4",
+    "parser": "https://raw.githubusercontent.com/antlr/grammars-v4/master/adql/ADQLParser.g4",
+    "start": "compilation",
+    "example": [
+      "select.adql"
+    ]
+ },
+ {
   "name": "agc",
   "lexer": "",
   "parser": "https://raw.githubusercontent.com/antlr/grammars-v4/master/agc/agc.g4",
