@@ -22,120 +22,168 @@ options {
     tokenVocab = ADQLLexer;
 }
 
-/* =====================
- * Entry point
- * ===================== */
+////////////////////////////////////////////////////////////
+// Entry point
+////////////////////////////////////////////////////////////
 
 adqlQuery
-    : selectExpression EOF
+    : selectStatement EOF
     ;
 
-/* =====================
- * SELECT
- * ===================== */
+////////////////////////////////////////////////////////////
+// SELECT
+////////////////////////////////////////////////////////////
 
-selectExpression
-    : selectQuery orderByClause? offsetClause?
+selectStatement
+    : SELECT setQuantifier? setLimit?
+      selectList
+      fromClause
+      whereClause?
+      groupByClause?
+      havingClause?
+      orderByClause?
+      offsetClause?
     ;
 
-queryExpression
-    : selectExpression | joinedTable
+setQuantifier
+    : DISTINCT
+    | ALL
     ;
 
-querySetPrimary
-    : selectQuery | LPAREN selectExpression RPAREN
-    ;
-
-querySetExpression
-    : querySetTerm | querySetTerm UNION ALL? querySetExpression | querySetTerm EXCEPT ALL? querySetExpression
-    ;
-
-querySetTerm
-    : querySetPrimary | querySetTerm INTERSECT ALL? querySetExpression
-    ;
-
-selectQuery
-    : SELECT setQuantifier? setLimit? selectList fromClause whereClause?
-      groupByClause? havingClause?
+setLimit
+    : TOP unsignedNumericLiteral
     ;
 
 selectList
-    : STAR
-    | selectSublist (COMMA selectSublist)*
+    : ASTERISK
+    | selectItem (COMMA selectItem)*
     ;
 
-selectSublist
-    : valueExpression (AS? identifier)?
-    | identifier DOT STAR
+selectItem
+    : valueExpression asClause?
+    | qualifier DOT ASTERISK
     ;
 
-/* =====================
- * FROM / WHERE
- * ===================== */
+asClause
+    : AS? identifier
+    ;
+
+////////////////////////////////////////////////////////////
+// FROM / JOIN
+////////////////////////////////////////////////////////////
 
 fromClause
     : FROM tableReference (COMMA tableReference)*
     ;
 
-tableReference
+qualifier
+    : tableName | correlationSpecification
+    ;
+
+derivedTable
+    : tableSubquery
+    ;
+
+tablePrimary
     : tableName correlationSpecification?
-    | LPAREN selectExpression RPAREN correlationSpecification
+    | derivedTable correlationSpecification
+    | LPAREN tableReference RPAREN
+    ;
+
+tableReference
+    : tablePrimary (joinClause)*
+    ;
+
+joinClause
+    : NATURAL? joinType? JOIN tablePrimary joinSpecification?
+    ;
+
+joinedTable
+    : qualifiedJoin
+    | LPAREN joinedTable RPAREN
+    ;
+
+qualifiedJoin
+    : tablePrimary NATURAL? joinType? JOIN tablePrimary joinSpecification?
+    ;
+
+tableName
+    : (schemaName DOT)? identifier
+    ;
+
+tableSubquery
+    : subquery
+    ;
+
+schemaName
+    : identifier
+    ;
+
+correlationSpecification
+    : AS? identifier
+    ;
+
+joinType
+    : INNER
+    | LEFT OUTER?
+    | RIGHT OUTER?
+    | FULL OUTER?
+    ;
+
+joinSpecification
+    : joinCondition
+    | namedColumnsJoin
+    ;
+
+joinCondition
+    : ON columnReference
+    ;
+
+namedColumnsJoin
+    : USING LPAREN identifierList RPAREN
+    ;
+
+identifierList
+    : identifier (COMMA identifier)*
+    ;
+
+////////////////////////////////////////////////////////////
+// WHERE / predicates
+////////////////////////////////////////////////////////////
+
+identifier
+    : IDENTIFIER
     ;
 
 whereClause
     : WHERE searchCondition
     ;
 
-/* =====================
- * Expressions
- * ===================== */
-
 searchCondition
-    : searchCondition OR booleanTerm
-    | booleanTerm
-    ;
-
-joinColumnList
-    : selectList
-    ;
-
-namedColumnsJoin
-    : USING LPAREN joinColumnList RPAREN
-    ;
-
-joinCondition
-    : ON searchCondition
-    ;
-
-joinSpecification
-    : joinCondition | namedColumnsJoin
-    ;
-
-outerJoinType
-    : LEFT
-    | RIGHT
-    | FULL
-    ;
-
-joinType
-    : INNER | outerJoinType OUTER?
-    ;
-
-joinedTable
-    : qualifiedJoin | LPAREN joinedTable RPAREN
-    ;
-
-qualifiedJoin
-    : tableReference NATURAL? joinType JOIN tableReference joinSpecification?
+    : booleanTerm
+    | searchCondition OR booleanTerm
     ;
 
 booleanTerm
-    : booleanTerm AND booleanFactor
-    | booleanFactor
+    : booleanFactor
+    | booleanTerm AND booleanFactor
     ;
 
 booleanFactor
-    : NOT? predicate
+    : NOT? booleanPrimary
+    ;
+
+booleanPrimary
+    : predicate
+    | LPAREN searchCondition RPAREN
+    ;
+
+columnName
+    : identifier
+    ;
+
+columnReference
+    : (qualifier DOT)? columnName
     ;
 
 predicate
@@ -143,18 +191,17 @@ predicate
     | betweenPredicate
     | inPredicate
     | likePredicate
+    | nullPredicate
     | existsPredicate
-    | predicateGeometryFunction
-    | nullPrediate
-    ;
-
-predicateGeometryFunction
-    : intersectsFunction
-    | containsFunction
+    | geometryPredicate
     ;
 
 comparisonPredicate
     : valueExpression comparisonOperator valueExpression
+    ;
+
+comparisonOperator
+    : EQ | NEQ | LT | LTE | GT | GTE
     ;
 
 betweenPredicate
@@ -162,54 +209,95 @@ betweenPredicate
     ;
 
 inPredicate
-    : valueExpression NOT? IN (subquery | LPAREN valueExpression (COMMA valueExpression)* RPAREN)
+    : valueExpression NOT? IN inPredicateValue
     ;
 
-intersectsFunction
-    : INTERSECTS LPAREN
-        geometryValueExpression COMMA geometryValueExpression
-      RPAREN
-    ;
-
-containsFunction
-    : CONTAINS LPAREN
-        geometryValueExpression COMMA geometryValueExpression
-      RPAREN
+inPredicateValue
+    : subquery
+    | LPAREN valueExpression (COMMA valueExpression)* RPAREN
     ;
 
 likePredicate
     : valueExpression NOT? (LIKE | ILIKE) valueExpression
     ;
 
+nullPredicate
+    : valueExpression IS NOT? NULL
+    ;
+
 existsPredicate
     : EXISTS subquery
     ;
 
-nullPrediate
-    : valueExpression IS NOT? NULL
+queryExpression
+    : selectStatement | joinedTable
     ;
 
+subquery
+    : LPAREN queryExpression RPAREN
+    ;
 
-/* =====================
- * Value expressions
- * ===================== */
+////////////////////////////////////////////////////////////
+// Geometry predicates
+////////////////////////////////////////////////////////////
+
+geometryPredicate
+    : INTERSECTS LPAREN valueExpression COMMA valueExpression RPAREN
+    | CONTAINS   LPAREN valueExpression COMMA valueExpression RPAREN
+    ;
+
+////////////////////////////////////////////////////////////
+// GROUP / HAVING / ORDER
+////////////////////////////////////////////////////////////
+
+groupByClause
+    : GROUP BY groupByItem (COMMA groupByItem)*
+    ;
+
+groupByItem
+    : columnReference
+    | valueExpression
+    ;
+
+havingClause
+    : HAVING searchCondition
+    ;
+
+orderByClause
+    : ORDER BY orderByItem (COMMA orderByItem)*
+    ;
+
+orderByItem
+    : valueExpression (ASC | DESC)?
+    ;
+
+offsetClause
+    : OFFSET unsignedNumericLiteral
+    ;
+
+////////////////////////////////////////////////////////////
+// Expressions
+////////////////////////////////////////////////////////////
 
 valueExpression
-    : numericExpression
-    | STRING_LITERAL
-    | NULL
-    | functionCall
-    | columnReference
+    : NULL
+    | numericExpression
+    | stringExpression
+    | geometryValueExpression
+    | countFunction
+    | caseFoldingFunction
     | LPAREN valueExpression RPAREN
     ;
 
 numericExpression
-    : numericExpression (PLUS | MINUS) term
+    : numericExpression PLUS term
+    | numericExpression MINUS term
     | term
     ;
 
 term
-    : term (STAR | SLASH) factor
+    : term ASTERISK factor
+    | term SLASH factor
     | factor
     ;
 
@@ -217,160 +305,187 @@ factor
     : (PLUS | MINUS)? numericPrimary
     ;
 
-numericPrimary
+unsignedNumericLiteral
     : NUMERIC_LITERAL
-    | aggregateFunction
-    | coord1Function
-    | coord2Function
-    | coordsysFunction
-    | functionCall
+    ;
+
+numericPrimary
+    : unsignedNumericLiteral
+    | columnReference
+    | numericFunction
+    | LPAREN numericExpression RPAREN
+    ;
+
+stringExpression
+    : stringPrimary
+    ;
+
+stringLiteral
+    : STRING_LITERAL
+    ;
+
+stringPrimary
+    : stringLiteral
+    | stringFunction
     | columnReference
     ;
 
+////////////////////////////////////////////////////////////
+// Geometry
+////////////////////////////////////////////////////////////
 
-/* =====================
- * Functions
- * ===================== */
-
-functionCall
-    : identifier LPAREN (valueExpression (COMMA valueExpression)*)? RPAREN
+geometryValueExpression
+    : geometryFunction
+    | columnReference
     ;
 
-aggregateFunction
-    : COUNT LPAREN STAR RPAREN
-    | COUNT LPAREN setQuantifier? valueExpression RPAREN
-    | AVG   LPAREN setQuantifier? numericExpression RPAREN
-    | SUM   LPAREN setQuantifier? numericExpression RPAREN
-    | MIN   LPAREN setQuantifier? valueExpression RPAREN
-    | MAX   LPAREN setQuantifier? valueExpression RPAREN
+geometryFunction
+    : pointFunction
+    | circleFunction
+    | polygonFunction
+    | centroidFunction
+    | regionFunction
+    | userDefinedFunction
     ;
 
-intervalFunction
-    : INTERVAL LPAREN numericExpression COMMA numericExpression RPAREN
+caseFoldingFunction
+    : LOWER LPAREN stringExpression RPAREN
+    | UPPER LPAREN stringExpression RPAREN
     ;
 
-centroidFunction
-    : CENTROID LPAREN geometryValueExpression RPAREN
+stringFunction
+    : stringGeometryFunction
+    | caseFoldingFunction
+    | userDefinedFunction
     ;
 
-circleFunction
-    : CIRCLE LPAREN
-        (STRING_LITERAL COMMA)?
-        numericExpression COMMA numericExpression COMMA numericExpression
-      RPAREN
+stringGeometryFunction
+    : coordsysFunction
     ;
 
-pointFunction
-    : POINT LPAREN
-        (STRING_LITERAL COMMA)? numericExpression COMMA numericExpression
-      RPAREN
-    ;
-
-boxFunction
-    : BOX LPAREN
-        numericExpression COMMA numericExpression COMMA
-        numericExpression COMMA numericExpression
-      RPAREN
+areaFunction
+    : AREA LPAREN geometryValueExpression RPAREN
     ;
 
 coord1Function
-    : COORD1 LPAREN geometryValueExpression RPAREN
+    : COORD1 LPAREN coordValue RPAREN
     ;
 
 coord2Function
-    : COORD2 LPAREN geometryValueExpression RPAREN
+    : COORD2 LPAREN coordValue RPAREN
     ;
 
 coordsysFunction
     : COORDSYS LPAREN geometryValueExpression RPAREN
     ;
 
+distanceFunction
+    : DISTANCE LPAREN coordValue COMMA coordValue RPAREN
+    | DISTANCE LPAREN numericExpression COMMA numericExpression COMMA numericExpression COMMA numericExpression RPAREN
+    ;
+
+countFunction
+    : COUNT LPAREN (ASTERISK | DISTINCT? valueExpression) RPAREN
+    ;
+
+nonPredicateGeometryFunction
+    : areaFunction
+    | coord1Function
+    | coord2Function
+    | distanceFunction
+    ;
+
+pointFunction
+    : POINT LPAREN stringLiteral COMMA numericExpression COMMA numericExpression RPAREN
+    ;
+
+circleCentre
+    : coordinates
+    | coordValue
+    ;
+
+circleFunction
+    : CIRCLE LPAREN (stringLiteral COMMA)? circleCentre COMMA numericExpression RPAREN
+    ;
+
 polygonFunction
-    : POLYGON LPAREN
-        (STRING_LITERAL COMMA)?
-        numericExpression (COMMA numericExpression)+
-      RPAREN
+    : POLYGON LPAREN polygonVertices RPAREN
+    ;
+
+pointValue
+    : pointFunction
+    | centroidFunction
+    | userDefinedFunction
+    ;
+
+coordValue
+    : pointValue
+    | columnReference
+    ;
+
+coordinates
+    : numericExpression COMMA numericExpression
+    ;
+
+polygonVertices
+    : coordinates COMMA coordinates COMMA coordinates (COMMA coordinates)*
+    | numericExpression COMMA numericExpression COMMA numericExpression (COMMA numericExpression)*
+    ;
+
+centroidFunction
+    : CENTROID LPAREN geometryValueExpression RPAREN
     ;
 
 regionFunction
-    : REGION LPAREN STRING_LITERAL RPAREN
+    : REGION LPAREN stringLiteral RPAREN
     ;
 
-geometryFunction
-    : centroidFunction
-    | pointFunction
-    | circleFunction
-    | coordsysFunction
-    | boxFunction
-    | polygonFunction
-    | regionFunction
-    | intervalFunction
+numericFunction
+    : trigFunction
+    | mathFunction
+    | inUnitFunction
+    | numericGeometryFunction
+    | userDefinedFunction
     ;
 
-geometryValueExpression
-    : geometryFunction
-    | columnReference
-    | LPAREN geometryValueExpression RPAREN
+numericGeometryFunction
+    : geometryPredicate
+    | nonPredicateGeometryFunction
     ;
 
-
-/* =====================
- * Misc
- * ===================== */
-
-columnReference
-    : identifier (DOT identifier)?
+trigFunction
+    : ACOS LPAREN numericExpression RPAREN
+    | ASIN LPAREN numericExpression RPAREN
+    | ATAN LPAREN numericExpression RPAREN
+    | ATAN2 LPAREN numericExpression COMMA numericExpression RPAREN
+    | COS LPAREN numericExpression RPAREN
+    | COT LPAREN numericExpression RPAREN
+    | SIN LPAREN numericExpression RPAREN
+    | TAN LPAREN numericExpression RPAREN
     ;
 
-identifier
-    : IDENTIFIER
-    | DELIMITED_IDENTIFIER
+mathFunction
+    : ABS LPAREN numericExpression RPAREN
+    | CEILING LPAREN numericExpression RPAREN
+    | DEGREES LPAREN numericExpression RPAREN
+    | EXP LPAREN numericExpression RPAREN
+    | FLOOR LPAREN numericExpression RPAREN
+    | LOG LPAREN numericExpression RPAREN
+    | LOG10 LPAREN numericExpression RPAREN
+    | MOD LPAREN numericExpression COMMA numericExpression RPAREN
+    | PI LPAREN RPAREN
+    | POWER LPAREN numericExpression COMMA numericExpression RPAREN
+    | RADIANS LPAREN numericExpression RPAREN
+    | RAND LPAREN (unsignedNumericLiteral)? RPAREN
+    | ROUND LPAREN numericExpression (COMMA factor)? RPAREN
+    | SQRT LPAREN numericExpression RPAREN
+    | TRUNCATE LPAREN numericExpression (COMMA factor)? RPAREN
     ;
 
-comparisonOperator
-    : EQ | NEQ | LT | LTE | GT | GTE
+inUnitFunction
+    : IN_UNIT LPAREN numericExpression COMMA stringLiteral RPAREN
     ;
 
-orderByClause
-    : ORDER BY orderByTerm (COMMA orderByTerm)*
-    ;
-
-orderByTerm
-    : valueExpression (ASC | DESC)?
-    ;
-
-offsetClause
-    : OFFSET NUMERIC_LITERAL
-    ;
-
-setQuantifier
-    : DISTINCT | ALL
-    ;
-
-setLimit
-    : TOP NUMERIC_LITERAL
-    ;
-
-groupByClause
-    : GROUP BY valueExpression (COMMA valueExpression)*
-    ;
-
-havingClause
-    : HAVING searchCondition
-    ;
-
-correlationSpecification
-    : AS? identifier
-    ;
-
-tableName
-    : (schemaName DOT)? identifier
-    ;
-
-schemaName
-    : identifier
-    ;
-
-subquery
-    : LPAREN queryExpression RPAREN
+userDefinedFunction
+    : identifier LPAREN (valueExpression (COMMA valueExpression)*)? RPAREN
     ;

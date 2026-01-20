@@ -1,118 +1,119 @@
-/*
-ADQL Grammar.
-Copyright (c) 2026, ROE (http://www.roe.ac.uk/)
-
-This information is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This information is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-// $antlr-format alignTrailingComments true, columnLimit 150, maxEmptyLinesToKeep 1, reflowComments false, useTab false
-// $antlr-format allowShortRulesOnASingleLine true, allowShortBlocksOnASingleLine true, minEmptyLines 0, alignSemicolons ownLine
-// $antlr-format alignColons trailing, singleLineOverrulesHangingColon true, alignLexerCommands true, alignLabels true, alignTrailers true
-
 lexer grammar ADQLLexer;
 
 options {
     caseInsensitive = true;
 }
 
-/* =====================
- * Keywords
- * ===================== */
+/*
+ * ============================
+ * Keywords (ADQL + SQL)
+ * ============================
+ */
 
+/* ADQL reserved words */
 ABS         : 'ABS';
 ACOS        : 'ACOS';
-ALL         : 'ALL';
-AND         : 'AND';
 AREA        : 'AREA';
-AS          : 'AS';
-ASC         : 'ASC';
 ASIN        : 'ASIN';
 ATAN        : 'ATAN';
 ATAN2       : 'ATAN2';
-AVG         : 'AVG';
-BETWEEN     : 'BETWEEN';
 BIGINT      : 'BIGINT';
 BOX         : 'BOX';
-BY          : 'BY';
-CAST        : 'CAST';
+CEILING     : 'CEILING';
 CENTROID    : 'CENTROID';
 CIRCLE      : 'CIRCLE';
 CONTAINS    : 'CONTAINS';
-COUNT       : 'COUNT';
 COORD1      : 'COORD1';
 COORD2      : 'COORD2';
 COORDSYS    : 'COORDSYS';
 COS         : 'COS';
-DESC        : 'DESC';
-DISTINCT    : 'DISTINCT';
-DOUBLE      : 'DOUBLE';
-EXCEPT      : 'EXCEPT';
-EXISTS      : 'EXISTS';
-FROM        : 'FROM';
-FULL        : 'FULL';
-GROUP       : 'GROUP';
-HAVING      : 'HAVING';
+COT         : 'COT';
+DEGREES     : 'DEGREES';
+DISTANCE    : 'DISTANCE';
+EXP         : 'EXP';
+FLOOR       : 'FLOOR';
 ILIKE       : 'ILIKE';
-IN          : 'IN';
-INNER       : 'INNER';
-INTERSECT   : 'INTERSECT';
 INTERSECTS  : 'INTERSECTS';
-INTERVAL    : 'INTERVAL';
-IS          : 'IS';
-JOIN        : 'JOIN';
-LEFT        : 'LEFT';
-LIKE        : 'LIKE';
-MAX         : 'MAX';
-MIN         : 'MIN';
-NATURAL     : 'NATURAL';
-NOT         : 'NOT';
-NULL        : 'NULL';
+IN_UNIT     : 'IN_UNIT';
+LOG         : 'LOG';
+LOG10       : 'LOG10';
+MOD         : 'MOD';
 OFFSET      : 'OFFSET';
-ON          : 'ON';
-OR          : 'OR';
-ORDER       : 'ORDER';
-OUTER       : 'OUTER';
+PI          : 'PI';
 POINT       : 'POINT';
 POLYGON     : 'POLYGON';
+POWER       : 'POWER';
+RADIANS     : 'RADIANS';
 REGION      : 'REGION';
-RIGHT       : 'RIGHT';
-SELECT      : 'SELECT';
-SUM         : 'SUM';
+RAND        : 'RAND';
+ROUND       : 'ROUND';
+SIN         : 'SIN';
+SQRT        : 'SQRT';
 TOP         : 'TOP';
-UNION       : 'UNION';
-USING       : 'USING';
+TAN         : 'TAN';
+TRUNCATE    : 'TRUNCATE';
+
+/* SQL reserved words */
+SELECT      : 'SELECT';
+FROM        : 'FROM';
 WHERE       : 'WHERE';
+GROUP       : 'GROUP';
+BY          : 'BY';
+HAVING      : 'HAVING';
+ORDER       : 'ORDER';
+ASC         : 'ASC';
+DESC        : 'DESC';
+INSERT      : 'INSERT';
+UPDATE      : 'UPDATE';
+DELETE      : 'DELETE';
+INTO        : 'INTO';
+VALUES      : 'VALUES';
+JOIN        : 'JOIN';
+LEFT        : 'LEFT';
+RIGHT       : 'RIGHT';
+FULL        : 'FULL';
+INNER       : 'INNER';
+OUTER       : 'OUTER';
+ON          : 'ON';
+USING       : 'USING';
+AS          : 'AS';
+AND         : 'AND';
+OR          : 'OR';
+NOT         : 'NOT';
+IN          : 'IN';
+BETWEEN     : 'BETWEEN';
+LIKE        : 'LIKE';
+IS          : 'IS';
+NULL        : 'NULL';
+EXISTS      : 'EXISTS';
+DISTINCT    : 'DISTINCT';
+ALL         : 'ALL';
+UNION       : 'UNION';
+EXCEPT      : 'EXCEPT';
+INTERSECT   : 'INTERSECT';
+CAST        : 'CAST';
+COUNT       : 'COUNT';
+AVG         : 'AVG';
+MIN         : 'MIN';
+MAX         : 'MAX';
+SUM         : 'SUM';
+TRUE        : 'TRUE';
+FALSE       : 'FALSE';
+TIMESTAMP   : 'TIMESTAMP';
+LOWER       : 'LOWER';
+UPPER       : 'UPPER';
+NATURAL     : 'NATURAL';
+CASE        : 'CASE';
+WHEN        : 'WHEN';
+THEN        : 'THEN';
+ELSE        : 'ELSE';
+END         : 'END';
 
-/* =====================
- * Operators & Symbols
- * ===================== */
-
-CONCAT      : '||';
-
-NEQ         : '!=' | '<>';
-LTE         : '<=';
-GTE         : '>=';
-
-EQ          : '=';
-LT          : '<';
-GT          : '>';
-
-PLUS        : '+';
-MINUS       : '-';
-STAR        : '*';
-SLASH       : '/';
-PERCENT     : '%';
+/*
+ * ============================
+ * Operators and punctuation
+ * ============================
+ */
 
 LPAREN      : '(';
 RPAREN      : ')';
@@ -120,55 +121,81 @@ LBRACK      : '[';
 RBRACK      : ']';
 COMMA       : ',';
 DOT         : '.';
-COLON       : ':';
+ASTERISK    : '*';
+PLUS        : '+';
+MINUS       : '-';
+SLASH       : '/';
+PERCENT     : '%';
 SEMICOLON   : ';';
+COLON       : ':';
 QUESTION    : '?';
-PIPE        : '|';
+VERTICAL_BAR: '|';
 
-/* =====================
+EQ          : '=';
+NEQ         : '<>' | '!=';
+LT          : '<';
+LTE         : '<=';
+GT          : '>';
+GTE         : '>=';
+
+CONCAT      : '||';
+DOUBLE_DOT  : '..';
+
+/*
+ * ============================
  * Literals
- * ===================== */
+ * ============================
+ */
 
 STRING_LITERAL
     : '\'' ( '\'\'' | ~'\'' )* '\''
     ;
 
 NUMERIC_LITERAL
-    : DIGIT+ ('.' DIGIT+)? EXPONENT?
-    | '.' DIGIT+ EXPONENT?
+    : DIGIT+ ( '.' DIGIT* )? ( 'E' [+-]? DIGIT+ )?
+    | '.' DIGIT+ ( 'E' [+-]? DIGIT+ )?
     ;
 
-fragment EXPONENT
-    : [E] [+-]? DIGIT+
-    ;
-
-/* =====================
+/*
+ * ============================
  * Identifiers
- * ===================== */
+ * ============================
+ */
 
+/* Delimited identifiers */
 DELIMITED_IDENTIFIER
     : '"' ( '""' | ~'"' )* '"'
     ;
 
+/* Regular identifiers */
 IDENTIFIER
-    : LETTER (LETTER | DIGIT | '_')*
+    : LETTER ( LETTER | DIGIT | '_' )*
     ;
 
-/* =====================
- * Fragments
- * ===================== */
+/*
+ * ============================
+ * Comments and whitespace
+ * ============================
+ */
 
-fragment DIGIT  : [0-9];
-fragment LETTER : [A-Z_];
-
-/* =====================
- * Whitespace & Comments
- * ===================== */
+LINE_COMMENT
+    : '--' ~[\r\n]* -> skip
+    ;
 
 WS
     : [ \t\r\n]+ -> skip
     ;
 
-LINE_COMMENT
-    : '--' ~[\r\n]* -> skip
+/*
+ * ============================
+ * Fragments
+ * ============================
+ */
+
+fragment DIGIT
+    : [0-9]
+    ;
+
+fragment LETTER
+    : [A-Z]
     ;
