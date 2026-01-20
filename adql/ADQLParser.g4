@@ -38,6 +38,22 @@ selectExpression
     : selectQuery orderByClause? offsetClause?
     ;
 
+queryExpression
+    : selectExpression | joinedTable
+    ;
+
+querySetPrimary
+    : selectQuery | LPAREN selectExpression RPAREN
+    ;
+
+querySetExpression
+    : querySetTerm | querySetTerm UNION ALL? querySetExpression | querySetTerm EXCEPT ALL? querySetExpression
+    ;
+
+querySetTerm
+    : querySetPrimary | querySetTerm INTERSECT ALL? querySetExpression
+    ;
+
 selectQuery
     : SELECT setQuantifier? setLimit? selectList fromClause whereClause?
       groupByClause? havingClause?
@@ -77,6 +93,40 @@ whereClause
 searchCondition
     : searchCondition OR booleanTerm
     | booleanTerm
+    ;
+
+joinColumnList
+    : selectList
+    ;
+
+namedColumnsJoin
+    : USING LPAREN joinColumnList RPAREN
+    ;
+
+joinCondition
+    : ON searchCondition
+    ;
+
+joinSpecification
+    : joinCondition | namedColumnsJoin
+    ;
+
+outerJoinType
+    : LEFT
+    | RIGHT
+    | FULL
+    ;
+
+joinType
+    : INNER | outerJoinType OUTER?
+    ;
+
+joinedTable
+    : qualifiedJoin | LPAREN joinedTable RPAREN
+    ;
+
+qualifiedJoin
+    : tableReference NATURAL? joinType JOIN tableReference joinSpecification?
     ;
 
 booleanTerm
@@ -322,5 +372,5 @@ schemaName
     ;
 
 subquery
-    : LPAREN selectExpression RPAREN
+    : LPAREN queryExpression RPAREN
     ;
