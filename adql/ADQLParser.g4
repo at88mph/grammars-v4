@@ -153,6 +153,7 @@ identifierList
 
 identifier
     : IDENTIFIER
+    | DELIMITED_IDENTIFIER
     ;
 
 whereClause
@@ -286,8 +287,22 @@ valueExpression
     | geometryValueExpression
     | countFunction
     | caseFoldingFunction
+    | caseExpression
     | LPAREN valueExpression RPAREN
     ;
+
+caseExpression
+    : CASE caseWhenClause+ caseElseClause? END
+    ;
+
+caseWhenClause
+    : WHEN searchCondition THEN valueExpression
+    ;
+
+caseElseClause
+    : ELSE valueExpression
+    ;
+
 
 numericExpression
     : numericExpression PLUS term
